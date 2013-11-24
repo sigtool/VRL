@@ -49,12 +49,11 @@
  * A Framework for Declarative GUI Programming on the Java Platform.
  * Computing and Visualization in Science, 2011, in press.
  */
-
 package eu.mihosoft.vrl.asm;
 
 import eu.mihosoft.vrl.lang.VLangUtils;
 import groovyjarjarasm.asm.*;
-import groovyjarjarasm.asm.commons.EmptyVisitor;
+
 import groovyjarjarasm.asm.commons.Remapper;
 import groovyjarjarasm.asm.commons.RemappingClassAdapter;
 import java.io.*;
@@ -92,12 +91,11 @@ public class ByteCodeUtil {
     public static Set<String> getClassesUsedBy(
             final File classFile,
             final String prefix // common prefix for all classes
-            // that will be retrieved
-            ) throws IOException {
+    // that will be retrieved
+    ) throws IOException {
 
         // based on ideas from:
         // http://stackoverflow.com/questions/3734825/find-out-which-classes-of-a-given-api-are-used
-
         IOException exception = null;
 
         BufferedInputStream in = null;
@@ -117,7 +115,6 @@ public class ByteCodeUtil {
                     Logger.getLogger(ByteCodeUtil.class.getName()).
                             log(Level.SEVERE, null, ex);
                 }
-
 
                 throw exception;
             }
@@ -145,19 +142,19 @@ public class ByteCodeUtil {
             }
         }
 
-        final Set<String> usedClasses =
-                new TreeSet<String>(new Comparator<String>() {
+        final Set<String> usedClasses
+                = new TreeSet<String>(new Comparator<String>() {
 
-            @Override
-            public int compare(final String o1, final String o2) {
-                return o1.compareTo(o2);
-            }
-        });
+                    @Override
+                    public int compare(final String o1, final String o2) {
+                        return o1.compareTo(o2);
+                    }
+                });
 
         final Remapper remapper = new ClassCollector(usedClasses, prefix);
         final VClassVisitor inner = new VClassVisitor();
-        final RemappingClassAdapter visitor =
-                new RemappingClassAdapter(inner, remapper);
+        final RemappingClassAdapter visitor
+                = new RemappingClassAdapter(inner, remapper);
 
         reader.accept(visitor, 0);
 
@@ -191,10 +188,10 @@ public class ByteCodeUtil {
                 // only one public class may be defined per source file. all
                 // other classes must be inner classes of the public class
                 String definedClsPrefix = definedCls.split("\\$")[0].trim();
-              
+
                 // check whether this used Cls is a class from the same code
                 // file
-                if (definedCls.equals(usedCls) 
+                if (definedCls.equals(usedCls)
                         || usedCls.startsWith(definedClsPrefix + "$")) {
                     outerClasses.add(usedCls);
                     break;
@@ -211,7 +208,11 @@ public class ByteCodeUtil {
     /**
      * Default class visitor. Does not modify class.
      */
-    private static class VClassVisitor extends EmptyVisitor {
+    private static class VClassVisitor extends ClassVisitor {
+
+        public VClassVisitor() {
+            super(Opcodes.ASM4);
+        }
 
         @Override
         public void visit(int i, int i1, String string,
@@ -269,8 +270,9 @@ public class ByteCodeUtil {
     }
 
     /**
-     * Returns the full class names of the classes that are defined 
-     * in the specified file. <p>
+     * Returns the full class names of the classes that are defined in the
+     * specified file.
+     * <p>
      * <b>Note:</b> only .class files are supported. This method will not work
      * for jar archives. This method may check .class files of inner classes to
      * fully extract all class names explicitly and implicitly defined in the
@@ -287,49 +289,51 @@ public class ByteCodeUtil {
 
         return _getClassNames(f, classNames, classFiles, false);
     }
-    
+
     /**
      * Returns the name of the first outer class defined in the specified file.
      * <p>
      * <b>Note:</b> only .class files are supported. This method will not work
      * for jar archives.</p>
+     *
      * @param f file to analyze
-     * @return name of the first outer class defined in the specified file or 
-     *         <code>null</code> if no class is defined in the specified file
-     * @throws IOException 
+     * @return name of the first outer class defined in the specified file or
+     * <code>null</code> if no class is defined in the specified file
+     * @throws IOException
      */
     public static String getFirstClassNameIn(File f) throws IOException {
         String result = null;
-        
+
         Collection<String> classNames = new ArrayList<String>();
         Collection<File> classFiles = new ArrayList<File>();
-        
-        Collection<String> outerNames = 
-                _getClassNames(f, classNames, classFiles, false);
-        
+
+        Collection<String> outerNames
+                = _getClassNames(f, classNames, classFiles, false);
+
         if (!outerNames.isEmpty()) {
             result = outerNames.iterator().next();
         }
-        
+
         return result;
     }
-    
-        /**
+
+    /**
      * Returns the names of the outer classes defined in the specified file.
      * <p>
      * <b>Note:</b> only .class files are supported. This method will not work
      * for jar archives.</p>
+     *
      * @param f file to analyze
      * @return names of the outer classes defined in the specified file
-     * @throws IOException 
+     * @throws IOException
      */
     public static Collection<String> getOuterClassNamesIn(File f) throws IOException {
-        
+
         Collection<String> classNames = new ArrayList<String>();
         Collection<File> classFiles = new ArrayList<File>();
-        
-        Collection<String> result = 
-                _getClassNames(f, classNames, classFiles, false);
+
+        Collection<String> result
+                = _getClassNames(f, classNames, classFiles, false);
 
         return result;
     }
@@ -357,7 +361,11 @@ public class ByteCodeUtil {
 
         IOException exception = null;
 
-        class ClassNameVisitor extends EmptyVisitor {
+        class ClassNameVisitor extends ClassVisitor {
+
+            public ClassNameVisitor() {
+                super(Opcodes.ASM4);
+            }
 
             @Override
             public void visit(
@@ -376,7 +384,7 @@ public class ByteCodeUtil {
             @Override
             public void visitInnerClass(String name, String outer,
                     String inner, int access) {
-                
+
                 // we do nothing if we ignore inner classes
                 if (ignoreInner) {
                     return;
@@ -407,9 +415,9 @@ public class ByteCodeUtil {
 
                 classNames.add(name);
 
-                File innerFile =
-                        new File(f.getParent(),
-                        VLangUtils.shortNameFromFullClassName(name) + ".class");
+                File innerFile
+                        = new File(f.getParent(),
+                                VLangUtils.shortNameFromFullClassName(name) + ".class");
                 try {
                     _getClassNames(innerFile, classNames, classFiles, false);
                 } catch (IOException ex) {
@@ -498,7 +506,11 @@ public class ByteCodeUtil {
     /**
      * Default class visitor. Does not modify class.
      */
-    private static class VPrintClassVisitor extends EmptyVisitor {
+    private static class VPrintClassVisitor extends ClassVisitor {
+
+        public VPrintClassVisitor() {
+            super(Opcodes.ASM4);
+        }
 
         @Override
         public void visit(int i, int i1, String string,
